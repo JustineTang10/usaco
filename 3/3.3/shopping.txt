@@ -1,0 +1,224 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: shopping
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_OFFERS 99
+#define MAX_CODE 999
+#define hashsize(n) ((unsigned long)1 << (n))
+#define hashmask(n) (hashsize(n) - 1)
+
+typedef struct offer {
+  int products[MAX_CODE];
+  int price;
+} offer;
+
+typedef struct link {
+  int current[5][3];
+  int price;
+  struct link* next;
+} link;
+
+typedef struct table_item {
+  int min_price;
+  link* associated;
+  struct table_item *next;
+} table_item;
+
+typedef struct memo_item {
+  int min_price;
+  int current[5][3];
+  struct memo_item *next;
+} memo_item;
+
+int s, b;
+offer offers[MAX_OFFERS];
+link *list, *old_list;
+static table_item* table[8192];
+static memo_item* memo[8192] = {NULL};
+
+int min(int v1, int v2) {
+  if (v1 > v2)
+    return v2;
+  return v1;
+}
+
+link* new_link(int price) {
+  link* l = malloc(sizeof(link));
+  if (l == NULL) {
+    fprintf(stderr, "malloc error\n");
+    exit(1);
+  }
+  l->price = price;
+  return l;
+}
+
+table_item* new_item() {
+  table_item* t = malloc(sizeof(table_item));
+  if (t == NULL) {
+    fprintf(stderr, "malloc error\n");
+    exit(1);
+  }
+  t->associated = NULL;
+  return t;
+}
+
+memo_item* new_memo() {
+  memo_item* m = malloc(sizeof(memo_item));
+  if (m == NULL) {
+    fprintf(stderr, "malloc error\n");
+    exit(1);
+  }
+  return m;
+}
+
+unsigned long oaat(int current[][3]) {
+  unsigned long i;
+  unsigned long hash = 0;
+  for (i = 0; i < b; i++) {
+    hash += current[i][1];
+    hash += (hash << 10);
+    hash ^= (hash >> 6);
+  }
+  hash += (hash << 3);
+  hash ^= (hash >> 11);
+  hash += (hash << 15);
+  return hash & hashmask(13);
+}
+
+void solve(int current_index, int num_items, int price,
+          int current[][3]) {
+  int queue[5], i, j;
+  if (num_items == 0) {
+    table_item* matching_item = table[oaat(current)];
+    while (matching_item != NULL) {
+      for (i = 0; i < b; i++)
+        if (matching_item->associated->current[i][1] != 
+            current[i][1])
+          break;
+      if (i == b)
+        break;
+      matching_item = matching_item->next;
+    }
+    if (matching_item == NULL) {
+      matching_item = new_item();
+      matching_item->min_price = price;
+      link* cur_link = new_link(price);
+      for (i = 0; i < b; i++)
+        for (j = 0; j < 3; j++)
+          cur_link->current[i][j] = current[i][j];
+      cur_link->next = list;
+      list = cur_link;
+      matching_item->associated = cur_link;
+      matching_item->associated->price = price;
+      matching_item->next = table[oaat(current)];
+      table[oaat(current)] = matching_item;
+    }
+    else if (price < matching_item->min_price) {
+      matching_item->associated->price = price;
+      matching_item->min_price = price;
+    }
+    return;
+  }
+  memo_item* m = memo[oaat(current)];
+  while (m != NULL) {
+    for (i = 0; i < b; i++)
+      if (m->current[i][1] != current[i][1])
+        break;
+    if (i == b)
+      break;
+    m = m->next;
+  }
+  if (m != NULL) {
+    if (m->min_price <= price)
+      return;
+    m->min_price = price;
+  }
+  else {
+    m = new_memo();
+    m->min_price = price;
+    for (i = 0; i < b; i++)
+      for (j = 0; j < 3; j++)
+        m->current[i][j] = current[i][j];
+    m->next = memo[oaat(current)];
+    memo[oaat(current)] = m;
+  }
+  int is_valid, sub_num, valid_offers = 0;
+  for (i = 0; i < s; i++) {
+    is_valid = 1;
+    for (j = 0; j < b; j++) {
+      queue[j] = 0;
+      if (offers[i].products[current[j][0] - 1] > 0) {
+        if (offers[i].products[current[j][0] - 1] > current[j][1]) {
+          is_valid = 0;
+          break;
+        }
+        else
+          queue[j] = offers[i].products[current[j][0] - 1];
+      }
+    }
+    if (is_valid == 1) {
+      valid_offers++;
+      for (j = 0; j < b; j++)
+        current[j][1] -= queue[j];
+      solve(current_index, num_items - queue[current_index], 
+            price + offers[i].price, current);
+      for (j = 0; j < b; j++)
+        current[j][1] += queue[j];
+    }
+  }
+  if (valid_offers == 0) {
+    current[current_index][1]--;
+    solve(current_index, num_items - 1, 
+          price + current[current_index][2], current);
+    current[current_index][1]++;
+  }
+}
+
+int main(void) {
+  FILE *fin = fopen("shopping.in", "r");
+  FILE *fout = fopen("shopping.out", "w");
+  list = new_link(0);
+  fscanf(fin, "%d", &s);
+  int i, j, n, c, k;
+  for (i = 0; i < s; i++) {
+    fscanf(fin, "%d", &n);
+    for (j = 0; j < MAX_CODE; j++)
+      offers[i].products[j] = 0;
+    for (j = 0; j < n; j++) {
+      fscanf(fin, "%d%d", &c, &k);
+      offers[i].products[c - 1] = k;
+    }
+    fscanf(fin, "%d", &offers[i].price);
+  }
+  fscanf(fin, "%d", &b);
+  for (i = 0; i < b; i++) {
+    fscanf(fin, "%d%d%d", &list->current[i][0], 
+                          &list->current[i][1], 
+                          &list->current[i][2]);
+  }
+  list->next = NULL;
+  for (i = 0; i < b; i++) {
+    for (j = 0; j < 8192; j++)
+      table[j] = NULL;
+    old_list = list;
+    list = NULL;
+    while (old_list != NULL) {
+      solve(i, old_list->current[i][1], old_list->price, 
+            old_list->current);
+      old_list = old_list->next;
+    }
+  }
+  int min_price = -1;
+  while (list != NULL) {
+    if (min_price == -1 || min_price > list->price)
+      min_price = list->price;
+    list = list->next;
+  }
+  fprintf(fout, "%d\n", min_price);
+  return 0;
+}

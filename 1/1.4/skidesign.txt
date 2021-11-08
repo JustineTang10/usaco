@@ -1,0 +1,81 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: skidesign
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int compare(const void *a, const void *b) {
+  return (*(int*)a - *(int*)b);
+}
+
+int main(void) {
+  FILE *fin = fopen("skidesign.in", "r");
+  FILE *fout = fopen("skidesign.out", "w");
+  int n, i, j, money = 0, top_hill, bottom_hill, current_money;
+  fscanf(fin, "%d", &n);
+  int hills[n];
+  for (i = 0; i < n; i++)
+    fscanf(fin, "%d", &hills[i]);
+  qsort(hills, n, sizeof(int), compare);
+  if (hills[n - 1] - hills[0] > 17) {
+    int difference = hills[n - 1] - hills[0] - 17;
+    /*if (difference % 2 == 1)
+      difference++;
+    difference /= 2;*/
+    /*
+    if (difference % 2 == 1) {
+      int count1, count2;
+      for (i = 0; i < n; i++) {
+        if (hills[i] < hills[n - 1] - (difference + 1) / 2)
+          count1++;
+        if (hills[i] > hills[0] + (difference + 1) / 2)
+          count2++;
+      }
+      if (count1 < count2) {
+        hills[0] += (difference + 1) / 2;
+        hills[n - 1] -= (difference - 1) / 2;
+      }
+      else {
+        hills[0] += (difference - 1) / 2;
+        hills[n - 1] -= (difference + 1) / 2;
+      }
+      money += ((difference - 1) / 2) * ((difference - 1) / 2)
+              + ((difference + 1) / 2) * ((difference + 1) / 2);
+    }
+    else {
+      hills[0] += difference / 2;
+      hills[n - 1] -= difference / 2;
+      money += 2 * (difference / 2) * (difference / 2);
+    }*/
+    for (i = 0; i < difference; i++) {
+      current_money = 0;
+      bottom_hill = hills[0] + (difference - (difference - i));
+      top_hill = hills[n - 1] - (difference - i);
+      current_money += (difference - (difference - i)) * 
+                        (difference - (difference - i)) + 
+                        (difference - i) * (difference - i);
+      for (j = 1; j < n - 1; j++) {
+        if (hills[j] >= bottom_hill)
+          break;
+        current_money += (bottom_hill - hills[j]) * 
+                  (bottom_hill - hills[j]);
+      }
+      for (j = n - 2; j > 0; j--) {
+        if (hills[j] <= top_hill)
+          break;
+        current_money += (hills[j] - top_hill) * 
+                  (hills[j] - top_hill);
+      }
+      if (i == 0 || current_money < money)
+        money = current_money;
+    }
+  }
+  /*for (i = 0; i < n; i++)
+    printf("%d\n", hills[i]);*/
+  fprintf(fout, "%d\n", money);
+  return 0;
+}

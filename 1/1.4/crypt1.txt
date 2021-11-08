@@ -1,0 +1,60 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: crypt1
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int compare_num(char number[], int digits[], int n) {
+  int found, i, j;
+  for (i = 0; i < strlen(number); i++) {
+    found = 0;
+    for (j = 0; j < n; j++) {
+      if (atoi((char[2]){number[i], 0}) == digits[j])
+        found = 1;
+    }
+    if (found == 0)
+      return 0;
+  }
+  return 1;
+}
+
+int main(void) {
+  FILE *fin = fopen("crypt1.in", "r");
+  FILE *fout = fopen("crypt1.out", "w");
+  int n, loop1, loop2, loop3, loop4, loop5;
+  int three_digit, two_digit;
+  char product[6], partial1[5], partial2[5];
+  fscanf(fin, "%d", &n);
+  int digits[n];
+  for (loop1 = 0; loop1 < n; loop1++)
+    fscanf(fin, "%d", &digits[loop1]);
+  int total = 0;
+  for (loop1 = 0; loop1 < n; loop1++)
+    for (loop2 = 0; loop2 < n; loop2++)
+      for (loop3 = 0; loop3 < n; loop3++)
+        for (loop4 = 0; loop4 < n; loop4++)
+          for (loop5 = 0; loop5 < n; loop5++) {
+            three_digit = digits[loop1] * 100 + digits[loop2] * 10
+                          + digits[loop3];
+            two_digit = digits[loop4] * 10 + digits[loop5];
+            sprintf(product, "%d", three_digit * two_digit);
+            sprintf(partial1, "%d", 
+                    three_digit * (two_digit % 10));
+            sprintf(partial2, "%d", three_digit * 
+                    ((two_digit - (two_digit % 10)) / 10));
+            if (strlen(product) == 4 && 
+                compare_num(product, digits, n) == 1 && 
+                strlen(partial1) == 3 &&
+                compare_num(partial1, digits, n) == 1 &&
+                strlen(partial2) == 3 &&
+                compare_num(partial2, digits, n) == 1) {
+              total++;
+            }
+          }
+  fprintf(fout, "%d\n", total);
+  return 0;
+}

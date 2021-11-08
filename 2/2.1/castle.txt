@@ -1,0 +1,229 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: castle
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_DIMENSION 50
+
+typedef struct square {
+  int x, y;
+  struct square* west;
+  struct square* north;
+  struct square* south;
+  struct square* east;
+  int room_index;
+  int visited;
+} square;
+
+typedef struct wall {
+  square* squares[2];
+  int* rooms[2];
+  char direction;
+} wall;
+
+static square* floorplan[MAX_DIMENSION][MAX_DIMENSION];
+static int rooms[MAX_DIMENSION * MAX_DIMENSION];
+static wall* walls[4900];
+int m, n, room_count = 0, wall_count = 0;
+
+square* new_square(int x, int y) {
+  square* s = malloc(sizeof(square));
+  if (s == NULL) {
+    fprintf(stderr, "malloc error\n");
+    exit(1);
+  }
+  s->west = NULL;
+  s->north = NULL;
+  s->south = NULL;
+  s->east = NULL;
+  s->visited = 0;
+  s->room_index = -1;
+  s->x = x;
+  s->y = y;
+  return s;
+}
+
+wall* new_wall(square* squares[2], char direction) {
+  wall* w = malloc(sizeof(wall));
+  if (w == NULL) {
+    fprintf(stderr, "malloc error\n");
+    exit(1);
+  }
+  w->squares[0] = squares[0];
+  w->squares[1] = squares[1];
+  w->rooms[0] = &(rooms[squares[0]->room_index]);
+  w->rooms[1] = &(rooms[squares[1]->room_index]);
+  w->direction = direction;
+  return w;
+}
+
+int min(int val1, int val2) {
+  if (val1 > val2)
+    return val2;
+  return val1;
+}
+
+int max(int val1, int val2) {
+  if (val1 > val2)
+    return val1;
+  return val2;
+}
+
+int compare(const void *a, const void *b) {
+  return (*(int*)b - *(int*)a);
+}
+
+int wall_compare(wall *wall_a, wall *wall_b) {
+  if (*(wall_a->rooms[0]) + *(wall_a->rooms[1]) ==
+      *(wall_b->rooms[0]) + *(wall_b->rooms[1])) {
+    int west_a = min(wall_a->squares[0]->x, wall_a->squares[1]->x);
+    int west_b = min(wall_b->squares[0]->x, wall_b->squares[1]->x);
+    if (west_a == west_b) {
+      int south_a = max(wall_a->squares[0]->y, wall_a->squares[1]->y);
+      int south_b = max(wall_b->squares[0]->y, wall_b->squares[1]->y);
+      if (south_a == south_b) {
+        if (wall_a->direction == 'N')
+          return -1;
+        return 1;
+      }
+      return south_b - south_a;
+    }
+    return west_a - west_b;
+  }
+  return (*(wall_b->rooms[0]) + *(wall_b->rooms[1])) -
+          (*(wall_a->rooms[0]) + *(wall_a->rooms[1]));
+}
+
+void search(square* search_square) {
+  square* current;
+  square* run[4];
+  int run_count = 0;
+  if (search_square->visited == 1)
+    return;
+  search_square->visited = 1;
+  search_square->room_index = room_count;
+  rooms[room_count]++;
+  if (search_square->west == NULL) {
+    if (search_square->x > 1) {
+      current = floorplan[search_square->y - 1][search_square->x - 2];
+      if (current->visited == 1 && 
+          current->room_index != room_count) {
+        walls[wall_count] = new_wall((square*[2])
+                                      {current, search_square}, 'E');
+        wall_count++;
+      }
+    }
+  }
+  else {
+    run[run_count] = search_square->west;
+    run_count++;
+  }
+  if (search_square->north == NULL) {
+    if (search_square->y > 1) {
+      current = floorplan[search_square->y - 2][search_square->x - 1];
+      if (current->visited == 1 && 
+          current->room_index != room_count) {
+        walls[wall_count] = new_wall((square*[2])
+                                      {search_square, current}, 'N');
+        wall_count++;
+      }
+    }
+  }
+  else {
+    run[run_count] = search_square->north;
+    run_count++;
+  }
+  if (search_square->east == NULL) {
+    if (search_square->x < m) {
+      current = floorplan[search_square->y - 1][search_square->x];
+      if (current->visited == 1 && 
+          current->room_index != room_count) {
+        walls[wall_count] = new_wall((square*[2])
+                                      {search_square, current}, 'E');
+        wall_count++;
+      }
+    }
+  }
+  else {
+    run[run_count] = search_square->east;
+    run_count++;
+  }
+  if (search_square->south == NULL) {
+    if (search_square->y < n) {
+      current = floorplan[search_square->y][search_square->x - 1];
+      if (current->visited == 1 && 
+          current->room_index != room_count) {
+        walls[wall_count] = new_wall((square*[2])
+                                      {current, search_square}, 'N');
+        wall_count++;
+      }
+    }
+  }
+  else {
+    run[run_count] = search_square->south;
+    run_count++;
+  }
+  for (int i = 0; i < run_count; i++) {
+    search(run[i]);
+  }
+}
+
+int main(void) {
+  FILE *fin = fopen("castle.in", "r");
+  FILE *fout = fopen("castle.out", "w");
+  int i, j, current_edges, biggest_room;
+  wall* temp;
+  fscanf(fin, "%d%d", &m, &n);
+  for (i = 0; i < n; i++)
+    for (j = 0; j < m; j++)
+      floorplan[i][j] = new_square(j + 1, i + 1);
+  for (i = 0; i < n; i++)
+    for (j = 0; j < m; j++) {
+      fscanf(fin, "%d", &current_edges);
+      if (current_edges % 2 == 0)
+        floorplan[i][j]->west = floorplan[i][j - 1];
+      else
+        current_edges--;
+      if (current_edges % 4 == 0)
+        floorplan[i][j]->north = floorplan[i - 1][j];
+      else
+        current_edges -= 2;
+      if (current_edges % 8 == 0) {
+        floorplan[i][j]->east = floorplan[i][j + 1];
+      }
+      else
+        current_edges -= 4;
+      if (current_edges == 0)
+        floorplan[i][j]->south = floorplan[i + 1][j];
+    }
+  for (i = 0; i < n; i++)
+    for (j = 0; j < m; j++) {
+      if (floorplan[i][j]->visited == 1)
+        continue;
+      floorplan[i][j]->room_index = room_count;
+      rooms[room_count] = 0;
+      search(floorplan[i][j]);
+      room_count++;
+    }
+  fprintf(fout, "%d\n", room_count);
+  for (i = 0; i < wall_count; i++)
+    for (j = i + 1; j < wall_count; j++)
+      if (wall_compare(walls[i], walls[j]) > 0) {
+        temp = walls[i];
+        walls[i] = walls[j];
+        walls[j] = temp;
+      }
+  biggest_room = *(walls[0]->rooms[0]) + *(walls[0]->rooms[1]);
+  qsort(rooms, room_count, sizeof(int), compare);
+  fprintf(fout, "%d\n%d\n", rooms[0], biggest_room);
+  fprintf(fout, "%d %d %c\n", walls[0]->squares[0]->y, 
+          walls[0]->squares[0]->x, walls[0]->direction);
+  /*for (i = 0; i < wall_count; i++)
+    printf("%d %d %c\n", walls[i]->squares[0]->x, walls[i]->squares[0]->y, walls[i]->direction);
+  printf("%d\n", wall_count);*/
+  return 0;
+}

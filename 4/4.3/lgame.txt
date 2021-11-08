@@ -1,0 +1,183 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: lgame
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct word {
+  char str[10];
+  int len, value;
+  struct word *previous;
+} word;
+
+int compare(const void *a, const void *b) {
+  return *((char*)a) - *((char*)b);
+}
+
+word* new_word() {
+  word* w = malloc(sizeof(word));
+  if (w == NULL) {
+    fprintf(stderr, "malloc error\n");
+    exit(1);
+  }
+  w->previous = NULL;
+  return w;
+}
+
+int main(void) {
+  FILE *fin = fopen("lgame.in", "r");
+  FILE *fout = fopen("lgame.out", "w");
+  FILE *dict = fopen("lgame.dict", "r");
+  static word* table[8] = {NULL};
+  static word* word_list[40000];
+  static word* starts[8] = {NULL};
+  int num_words = 0;
+  int values[26] = {2, 5, 4, 4, 1, 6, 5, 5, 1, 7, 6, 3, 5, 
+                    2, 3, 5, 7, 2, 1, 2, 4, 6, 6, 7, 5, 7};
+  char string[7], current_char;
+  int string_len = 0;
+  fscanf(fin, "%c", &current_char);
+  while (current_char != '\n') {
+    string[string_len++] = current_char;
+    fscanf(fin, "%c", &current_char);
+  }
+  qsort(string, string_len, sizeof(char), compare);
+  char current_word[11], sorted_word[11];
+  int cur_word_len, index, i, j, k;
+  word *cur_word, *search_word;
+  for (;;) {
+    cur_word_len = 0;
+    fscanf(dict, "%c", &current_char);
+    if (current_char == '.')
+      break;
+    while (current_char != '\n') {
+      current_word[cur_word_len] = current_char;
+      sorted_word[cur_word_len] = current_char;
+      cur_word_len++;
+      fscanf(dict, "%c", &current_char);
+    }
+    qsort(sorted_word, cur_word_len, sizeof(char), compare);
+    index = 0;
+    for (i = 0; i < string_len; i++)
+      if (string[i] == sorted_word[index]) {
+        index++;
+        if (index == cur_word_len)
+          break;
+      }
+    if (i < string_len) {
+      cur_word = new_word();
+      cur_word->value = 0;
+      for (i = 0; i < cur_word_len; i++) {
+        cur_word->str[i] = current_word[i];
+        cur_word->value += values[current_word[i] - 97];
+      }
+      cur_word->len = cur_word_len;
+      if (table[cur_word_len] == NULL) {
+        table[cur_word_len] = cur_word;
+        starts[cur_word_len] = cur_word;
+      }
+      else {
+        table[cur_word_len]->previous = cur_word;
+        table[cur_word_len] = cur_word;
+      }
+      word_list[num_words++] = cur_word;
+    }
+  }
+  int max_total = 0;
+  word *print_words = NULL, *start_word = NULL;
+  for (i = 0; i < num_words; i++) {
+    if (word_list[i]->len <= string_len - 3) {
+      for (k = 3; k <= string_len - word_list[i]->len; k++) {
+        search_word = starts[k];
+        while (search_word != NULL) {
+          if (strcmp(word_list[i]->str, search_word->str) <= 0) {
+            for (j = 0; j < search_word->len; j++)
+              current_word[j] = search_word->str[j];
+            for (j = 0; j < word_list[i]->len; j++)
+              current_word[j + search_word->len] = 
+                word_list[i]->str[j];
+            qsort(current_word, 
+                  search_word->len + word_list[i]->len,
+                  sizeof(char), compare);
+            index = 0;
+            for (j = 0; j < string_len; j++)
+              if (string[j] == current_word[index]) {
+                index++;
+                if (index == search_word->len + word_list[i]->len)
+                  break;
+              }
+            if (j < string_len) {
+              if (search_word->value + 
+                  word_list[i]->value > max_total) {
+                cur_word = new_word();
+                for (j = 0; j < word_list[i]->len; j++)
+                  cur_word->str[j] = word_list[i]->str[j];
+                cur_word->str[word_list[i]->len] = ' ';
+                for (j = 0; j < search_word->len; j++)
+                  cur_word->str[j + word_list[i]->len + 1] = 
+                    search_word->str[j];
+                start_word = cur_word;
+                print_words = cur_word;
+                max_total = search_word->value + 
+                            word_list[i]->value;
+              } else if (search_word->value + 
+                          word_list[i]->value == max_total) {
+                cur_word = new_word();
+                for (j = 0; j < word_list[i]->len; j++)
+                  cur_word->str[j] = word_list[i]->str[j];
+                cur_word->str[word_list[i]->len] = ' ';
+                for (j = 0; j < search_word->len; j++)
+                  cur_word->str[j + word_list[i]->len + 1] = 
+                    search_word->str[j];
+                print_words->previous = cur_word;
+                print_words = cur_word;
+              }
+            }
+          }
+          search_word = search_word->previous;
+        }
+      }
+    }
+    if (word_list[i]->value >= max_total) {
+      for (j = 0; j < word_list[i]->len; j++)
+        sorted_word[j] = word_list[i]->str[j];
+      qsort(sorted_word, word_list[i]->len, sizeof(char), 
+            compare);
+      index = 0;
+      for (j = 0; j < string_len; j++) {
+        if (string[j] == sorted_word[index]) {
+          index++;
+          if (index == word_list[i]->len)
+            break;
+        }
+      }
+      if (j < string_len) {
+        if (word_list[i]->value > max_total) {
+          cur_word = new_word();
+          for (j = 0; j < word_list[i]->len; j++)
+            cur_word->str[j] = word_list[i]->str[j];
+          start_word = cur_word;
+          print_words = cur_word;
+          max_total = word_list[i]->value;
+        } else if (word_list[i]->value == max_total) {
+          cur_word = new_word();
+          for (j = 0; j < word_list[i]->len; j++)
+            cur_word->str[j] = word_list[i]->str[j];
+          print_words->previous = cur_word;
+          print_words = cur_word;
+        }
+      }
+    }
+  }
+  fprintf(fout, "%d\n", max_total);
+  cur_word = start_word;
+  while (cur_word != NULL) {
+    fprintf(fout, "%s\n", cur_word->str);
+    cur_word = cur_word->previous;
+  }
+  return 0;
+}

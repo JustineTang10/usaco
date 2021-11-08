@@ -1,0 +1,89 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: comehome
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+
+typedef struct edge {
+  int to_index, distance;
+  struct edge* next;
+} edge;
+
+int letter_index(char letter) {
+  if (isupper(letter))
+    return letter - 'A' + 26;
+  return letter - 'A' - 32;
+}
+
+edge* new_edge(int to, int distance) {
+  edge* e = malloc(sizeof(edge));
+  if (e == NULL) {
+    fprintf(stderr, "malloc error\n");
+    exit(1);
+  }
+  e->to_index = to;
+  e->distance = distance;
+  return e;
+}
+
+int main(void) {
+  FILE *fin = fopen("comehome.in", "r");
+  FILE *fout = fopen("comehome.out", "w");
+  static edge* adj_list[52] = {NULL};
+  static int distances[52][2];
+  int p, i;
+  for (i = 0; i < 52; i++) {
+    distances[i][0] = -1;
+    distances[i][1] = 0;
+  }
+  fscanf(fin, "%d\n", &p);
+  int distance;
+  char from_char, to_char;
+  edge* current_edge;
+  for (i = 0; i < p; i++) {
+    fscanf(fin, "%c %c %d\n", &from_char, &to_char, &distance);
+    current_edge = new_edge(letter_index(to_char), distance);
+    current_edge->next = adj_list[letter_index(from_char)];
+    adj_list[letter_index(from_char)] = current_edge;
+    current_edge = new_edge(letter_index(from_char), distance);
+    current_edge->next = adj_list[letter_index(to_char)];
+    adj_list[letter_index(to_char)] = current_edge;
+  }
+  distances[51][0] = 0;
+  int cur_parent = 51, cur_min;
+  int best[2] = {-1, -1};
+  for (;;) {
+    distances[cur_parent][1] = 1;
+    current_edge = adj_list[cur_parent];
+    while (current_edge != NULL) {
+      if (distances[current_edge->to_index][1] == 0 && 
+          (distances[current_edge->to_index][0] == -1 || 
+          distances[cur_parent][0] + current_edge->distance < 
+          distances[current_edge->to_index][0])) {
+        distances[current_edge->to_index][0] = distances[cur_parent][0] 
+                                        + current_edge->distance;
+        if (current_edge->to_index >= 26 && (best[1] == -1 || 
+            distances[current_edge->to_index][0] < best[1])) {
+          best[0] = current_edge->to_index;
+          best[1] = distances[current_edge->to_index][0];
+        }
+      }
+      current_edge = current_edge->next;
+    }
+    cur_min = -1;
+    for (i = 0; i < 52; i++)
+      if (distances[i][1] == 0 && distances[i][0] != -1 && 
+          (cur_min == -1 || distances[i][0] < cur_min)) {
+        cur_min = distances[i][0];
+        cur_parent = i;
+      }
+    if (cur_min == -1)
+      break;
+  }
+  fprintf(fout, "%c %d\n", best[0] - 26 + 'A', best[1]);
+  return 0;
+}

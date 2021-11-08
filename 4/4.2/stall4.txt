@@ -1,0 +1,114 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: stall4
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct edge {
+  int to, is_middle;
+  struct edge* next;
+} edge;
+
+edge* new_edge(int to) {
+  edge* e = malloc(sizeof(edge));
+  if (e == NULL) {
+    fprintf(stderr, "malloc error\n");
+    exit(1);
+  }
+  e->to = to;
+  e->is_middle = 0;
+  return e;
+}
+
+int main(void) {
+  FILE *fin = fopen("stall4.in", "r");
+  FILE *fout = fopen("stall4.out", "w");
+  static int distances[402][3];
+  static edge* edge_table[402][402] = {NULL};
+  edge* adj_list[402] = {NULL};
+  int n, m, i, j, s, cur_to;
+  fscanf(fin, "%d%d", &n, &m);
+  edge* cur_edge;
+  for (i = 1; i <= n; i++) {
+    cur_edge = new_edge(i);
+    cur_edge->next = adj_list[0];
+    adj_list[0] = cur_edge;
+    edge_table[0][i] = cur_edge;
+  }
+  for (i = 1; i <= m; i++) {
+    cur_edge = new_edge(401);
+    cur_edge->next = adj_list[i + 200];
+    adj_list[i + 200] = cur_edge;
+    edge_table[i + 200][401] = cur_edge;
+  }
+  for (i = 1; i <= n; i++) {
+    fscanf(fin, "%d", &s);
+    for (j = 0; j < s; j++) {
+      fscanf(fin, "%d", &cur_to);
+      cur_edge = new_edge(cur_to + 200);
+      cur_edge->next = adj_list[i];
+      cur_edge->is_middle = 1;
+      adj_list[i] = cur_edge;
+      edge_table[i][cur_to + 200] = cur_edge;
+    }
+  }
+  int cur_parent, cur_max, num_pairs = 0, cur_node, found;
+  for (;;) {
+    for (i = 0; i <= 401; i++) {
+      distances[i][0] = -1;
+      distances[i][1] = 0;
+      distances[i][2] = -1;
+    }
+    cur_parent = 0;
+    distances[0][0] = 0;
+    for (;;) {
+      distances[cur_parent][1] = 1;
+      cur_edge = adj_list[cur_parent];
+      while (cur_edge != NULL) {
+        if (cur_edge->to != -1 && distances[cur_edge->to][1] == 0 
+            && distances[cur_edge->to][0] < 
+              distances[cur_parent][0] + 1) {
+          distances[cur_edge->to][0] = distances[cur_parent][0] + 1;
+          distances[cur_edge->to][2] = cur_parent;
+        }
+        cur_edge = cur_edge->next;
+      }
+      cur_max = -1;
+      for (i = 0; i <= 401; i++)
+        if (distances[i][1] == 0 && distances[i][0] > cur_max) {
+          cur_parent = i;
+          cur_max = distances[i][0];
+        }
+      if (cur_parent == 401 || cur_max == -1)
+        break;
+    }
+    if (cur_max == -1)
+      break;
+    cur_node = 401;
+    found = 0;
+    while (distances[cur_node][2] != -1) {
+      edge_table[distances[cur_node][2]][cur_node]->to = -1;
+      if (edge_table[distances[cur_node][2]][cur_node]->is_middle
+           == 1 && found == 0) {
+        num_pairs++;
+        edge_table[distances[cur_node][2]][cur_node]->is_middle = 0;
+        found = 1;
+      }
+      if (edge_table[cur_node][distances[cur_node][2]] != NULL)
+        edge_table[cur_node][distances[cur_node][2]]->to = 
+          distances[cur_node][2];
+      else {
+        cur_edge = new_edge(distances[cur_node][2]);
+        cur_edge->next = adj_list[cur_node];
+        adj_list[cur_node] = cur_edge;
+        edge_table[cur_node][distances[cur_node][2]] = cur_edge;
+      }
+      cur_node = distances[cur_node][2];
+    }
+  }
+  fprintf(fout, "%d\n", num_pairs);
+  return 0;
+}

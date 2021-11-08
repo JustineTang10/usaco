@@ -1,0 +1,50 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: combo
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int is_comb(int comb[], int right_comb[], int n) {
+  for (int i = 0; i < 3; i++)
+    if (!((comb[i] - right_comb[i] >= -2 && 
+            comb[i] - right_comb[i] <= 2) ||
+        (comb[i] - right_comb[i] - n >= -2 &&
+          comb[i] - right_comb[i] - n <= 2) ||
+        (comb[i] - right_comb[i] + n >= -2 &&
+          comb[i] - right_comb[i] + n <= 2)))
+      return 0;
+  return 1;
+}
+
+int main(void) {
+  FILE *fin = fopen("combo.in", "r");
+  FILE *fout = fopen("combo.out", "w");
+  int n, i, j, k;
+  int farmer_comb[3], master_comb[3], current_comb[3];
+  fscanf(fin, "%d", &n);
+  for (i = 0; i < 3; i++)
+    fscanf(fin, "%d", &farmer_comb[i]);
+  for (i = 0; i < 3; i++)
+    fscanf(fin, "%d", &master_comb[i]);
+  int num_combs = 0;
+  for (i = 1; i <= n; i++) {
+    current_comb[0] = i;
+    for (j = 1; j <= n; j++) {
+      current_comb[1] = j;
+      for (k = 1; k <= n; k++) {
+        current_comb[2] = k;
+        if (is_comb(current_comb, farmer_comb, n) == 1 ||
+            is_comb(current_comb, master_comb, n) == 1) {
+          num_combs++;
+          //printf("%d %d %d\n", current_comb[0], current_comb[1], current_comb[2]);
+        }
+      }
+    }
+  }
+  fprintf(fout, "%d\n", num_combs);
+  return 0;
+}

@@ -1,0 +1,156 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: camelot
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_ROWS 30
+#define MAX_COLUMNS 26
+
+typedef struct knight {
+  int row, column;
+  int distances[MAX_ROWS][MAX_COLUMNS];
+} knight;
+
+static int board[MAX_ROWS][MAX_COLUMNS] = {0};
+static knight knights[800];
+int king[2], num_knights = 0, r, c;
+
+int max(int val1, int val2) {
+  if (val1 > val2)
+    return val1;
+  return val2;
+}
+
+void find_knight(int knight_index) {
+  int queue[r * c][2], new_queue[r * c][2];
+  int queue_len = 1, new_queue_len;
+  queue[0][0] = knights[knight_index].row;
+  queue[0][1] = knights[knight_index].column;
+  int i, j, count = 0;
+  int row_values[8] = {2, -2, 1, -1, 2, -2, 1, -1};
+  int col_values[8] = {1, -1, 2, -2, -1, 1, -2, 2};
+  while (queue_len > 0) {
+    new_queue_len = 0;
+    for (i = 0; i < queue_len; i++) {
+      knights[knight_index].distances[queue[i][0]][queue[i][1]]
+      = count;
+      board[queue[i][0]][queue[i][1]] += count;
+      for (j = 0; j < 8; j++)
+        if ((queue[i][0] + row_values[j] >= 0 && 
+              queue[i][0] + row_values[j] < r) && 
+            (queue[i][1] + col_values[j] >= 0 && 
+              queue[i][1] + col_values[j] < c) &&
+            knights[knight_index].distances
+              [queue[i][0] + row_values[j]]
+              [queue[i][1] + col_values[j]] == -2) {
+          new_queue[new_queue_len][0] = queue[i][0] + 
+                                        row_values[j];
+          new_queue[new_queue_len][1] = queue[i][1] + 
+                                        col_values[j];
+          knights[knight_index].distances
+            [queue[i][0] + row_values[j]]
+            [queue[i][1] + col_values[j]] = -1;
+          new_queue_len++;
+        }
+    }
+    for (i = 0; i < new_queue_len; i++) {
+      queue[i][0] = new_queue[i][0];
+      queue[i][1] = new_queue[i][1];
+    }
+    queue_len = new_queue_len;
+    count++;
+  }
+}
+
+int main(void) {
+  FILE *fin = fopen("camelot.in", "r");
+  FILE *fout = fopen("camelot.out", "w");
+  static int cur_distances[MAX_ROWS][MAX_COLUMNS];
+  int i, j, k, l, cur_knight;
+  fscanf(fin, "%d %d ", &r, &c);
+  int cur_row;
+  char cur_col;
+  fscanf(fin, "%c %d ", &cur_col, &cur_row);
+  king[0] = cur_row - 1;
+  king[1] = cur_col - 'A';
+  while (fscanf(fin, "%c %d ", &cur_col, &cur_row) != EOF) {
+    knights[num_knights].row = cur_row - 1;
+    knights[num_knights].column = cur_col - 'A';
+    for (i = 0; i < r; i++)
+      for (j = 0; j < c; j++)
+        knights[num_knights].distances[i][j] = -2;
+    num_knights++;
+  }
+  for (i = 0; i < num_knights; i++)
+    find_knight(i);
+  int king_steps, cur_total, min_total = -1;
+  int queue[r * c][2], new_queue[r * c][2];
+  int row_values[8] = {2, -2, 1, -1, 2, -2, 1, -1};
+  int col_values[8] = {1, -1, 2, -2, -1, 1, -2, 2};
+  int queue_len, new_queue_len, count;
+  for (i = -2; i <= 2; i++)
+    for (j = -2; j <= 2; j++) {
+      if (king[0] + i < 0 || king[0] + i >= r || 
+          king[1] + j < 0 || king[1] + j >= c)
+        continue;
+      for (k = 0; k < r; k++)
+        for (l = 0; l < c; l++)
+          cur_distances[k][l] = -2;
+      king_steps = max(abs(i), abs(j));
+      queue_len = 1;
+      count = 0;
+      queue[0][0] = king[0] + i;
+      queue[0][1] = king[1] + j;
+      while (queue_len > 0) {
+        new_queue_len = 0;
+        for (k = 0; k < queue_len; k++) {
+          cur_distances[queue[k][0]][queue[k][1]] = count;
+          for (l = 0; l < 8; l++)
+            if ((queue[k][0] + row_values[l] >= 0 && 
+                  queue[k][0] + row_values[l] < r) && 
+                (queue[k][1] + col_values[l] >= 0 && 
+                  queue[k][1] + col_values[l] < c) &&
+                cur_distances[queue[k][0] + row_values[l]]
+                  [queue[k][1] + col_values[l]] == -2) {
+              new_queue[new_queue_len][0] = queue[k][0] + 
+                                            row_values[l];
+              new_queue[new_queue_len][1] = queue[k][1] + 
+                                            col_values[l];
+              cur_distances[queue[k][0] + row_values[l]]
+                [queue[k][1] + col_values[l]] = -1;
+              new_queue_len++;
+            }
+        }
+        for (k = 0; k < new_queue_len; k++) {
+          queue[k][0] = new_queue[k][0];
+          queue[k][1] = new_queue[k][1];
+        }
+        queue_len = new_queue_len;
+        count++;
+      }
+      for (cur_knight = 0; cur_knight < num_knights; cur_knight++)
+        for (k = 0; k < r; k++)
+          for (l = 0; l < c; l++) {
+            if (knights[cur_knight].distances[k][l] == -2 || 
+                cur_distances[knights[cur_knight].row]
+                [knights[cur_knight].column] == -2 || 
+                cur_distances[k][l] == -2)
+              continue;
+            cur_total = king_steps + board[k][l] - 
+                        knights[cur_knight].distances[k][l] + 
+                        cur_distances[knights[cur_knight].row]
+                        [knights[cur_knight].column] + 
+                        cur_distances[k][l];
+            if (cur_total < min_total || min_total == -1)
+              min_total = cur_total;
+          }
+    }
+  if (min_total == -1)
+    min_total = 0;
+  fprintf(fout, "%d\n", min_total);
+  return 0;
+}

@@ -1,0 +1,39 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: ride
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main(void) {
+  FILE *fin = fopen("ride.in", "r");
+  FILE *fout = fopen("ride.out", "w");
+  char cometName[8];
+  char groupName[8];
+  int cometSum = 1, groupSum = 1;
+  int previous[] = {1, 1};
+  short i;
+  fscanf(fin, "%s%s", cometName, groupName);
+  for (i = 0; i < 6; i++) {
+    if (cometName[i])
+      cometSum *= cometName[i] - ('A' - 1);
+    if (cometSum < 0)
+      cometSum = previous[0];
+    if (groupName[i])
+      groupSum *= groupName[i] - ('A' - 1);
+    if (groupSum < 0)
+      groupSum = previous[1];
+    previous[0] = cometSum;
+    previous[1] = groupSum;
+  }
+  if (cometSum % 47 == groupSum % 47)
+    fprintf(fout, "GO\n");
+  else
+    fprintf(fout, "STAY\n");
+  fclose(fin);
+  fclose(fout);
+  return 0;
+}

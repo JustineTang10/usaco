@@ -1,0 +1,38 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: inflate
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_N 10000
+
+int main(void) {
+  FILE *fin = fopen("inflate.in", "r");
+  FILE *fout = fopen("inflate.out", "w");
+  static int problems[MAX_N][2];
+  int m, n;
+  fscanf(fin, "%d%d", &m, &n);
+  int i, j;
+  for (i = 0; i < n; i++)
+    fscanf(fin, "%d%d", &problems[i][0], &problems[i][1]);
+  int dp[m + 1], max_overall = 0, cur_index;
+  dp[0] = 0;
+  for (i = 1; i <= m; i++) {
+    dp[i] = -1;
+    cur_index = -1;
+    for (j = 0; j < n; j++)
+      if (i >= problems[j][1] && (cur_index == -1 || 
+          dp[i - problems[j][1]] + problems[j][0] > 
+          dp[i - problems[cur_index][1]] + problems[cur_index][0]))
+        cur_index = j;
+    if (cur_index >= 0 && dp[i - problems[cur_index][1]] >= 0)
+      dp[i] = dp[i - problems[cur_index][1]] + problems[cur_index][0];
+    if (dp[i] > max_overall)
+      max_overall = dp[i];
+  }
+  fprintf(fout, "%d\n", max_overall);
+  return 0;
+}

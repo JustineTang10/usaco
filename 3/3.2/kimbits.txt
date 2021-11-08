@@ -1,0 +1,39 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: kimbits
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(void) {
+  FILE *fin = fopen("kimbits.in", "r");
+  FILE *fout = fopen("kimbits.out", "w");
+  long long n, l, i;
+  fscanf(fin, "%lld%lld%lld", &n, &l, &i);
+  int dp[n + 1][l + 1];
+  int loop1, loop2;
+  for (loop1 = 0; loop1 <= n; loop1++)
+    dp[loop1][0] = 1;
+  for (loop1 = 0; loop1 <= l; loop1++)
+    dp[0][loop1] = 1;
+  for (loop1 = 1; loop1 <= n; loop1++)
+    for (loop2 = 1; loop2 <= l; loop2++)
+      dp[loop1][loop2] = dp[loop1 - 1][loop2] + 
+                          dp[loop1 - 1][loop2 - 1];
+  long long cur_n = n, cur_l = l, cur_i = i;
+  for (loop1 = 0; loop1 < n; loop1++) {
+    printf("%lld\n", cur_i);
+    if (dp[cur_n - 1][cur_l] < cur_i) {
+      fprintf(fout, "1");
+      cur_i = cur_i - dp[cur_n - 1][cur_l];
+      cur_l--;
+    }
+    else
+      fprintf(fout, "0");
+    cur_n--;
+  }
+  fprintf(fout, "\n");
+  return 0;
+}

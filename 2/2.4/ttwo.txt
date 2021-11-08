@@ -1,0 +1,136 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: ttwo
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct organism {
+  int point[2];
+  int direction;
+} organism;
+
+typedef struct linked_list {
+  int point[2];
+  int direction;
+  struct linked_list* next;
+} linked_list;
+
+int grid[10][10] = {0};
+static linked_list* table[10][10][4] = {NULL};
+
+linked_list* new_lpart(int point[2], int direction) {
+  linked_list* l = malloc(sizeof(linked_list));
+  if (l == NULL) {
+    fprintf(stderr, "malloc error\n");
+    exit(1);
+  }
+  l->point[0] = point[0];
+  l->point[1] = point[1];
+  l->direction = direction;
+  l->next = NULL;
+  return l;
+}
+
+int main(void) {
+  FILE *fin = fopen("ttwo.in", "r");
+  FILE *fout = fopen("ttwo.out", "w");
+  char current_char;
+  int i, j;
+  organism cows, farmer;
+  cows.direction = 0;
+  farmer.direction = 0;
+  for (i = 0; i < 10; i++) {
+    for (j = 0; j < 10; j++) {
+      fscanf(fin, "%c", &current_char);
+      if (current_char != '*') {
+        grid[i][j] = 1;
+        if (current_char == 'C') {
+          cows.point[0] = i;
+          cows.point[1] = j;
+        }
+        else if (current_char == 'F') {
+          farmer.point[0] = i;
+          farmer.point[1] = j;
+        }
+      }
+    }
+    fscanf(fin, "\n");
+  }
+  int num_minutes = 0;
+  linked_list *prev_node, *cur_node;
+  organism *cur_org, *table_org;
+  for (;;) {
+    cur_org = &cows;
+    for (i = 0; i < 2; i++) {
+      prev_node = NULL;
+      cur_node = table[cur_org->point[0]]
+                      [cur_org->point[1]]
+                      [cur_org->direction];
+      if (cur_org->point[0] == cows.point[0] && 
+          cur_org->point[1] == cows.point[1])
+        table_org = &farmer;
+      else
+        table_org = &cows;
+      while (cur_node != NULL) {
+        if (cur_node->point[0] == table_org->point[0] && 
+            cur_node->point[1] == table_org->point[1] &&
+            cur_node->direction == table_org->direction) {
+          fprintf(fout, "0\n");
+          exit(0);
+        }
+        prev_node = cur_node;
+        cur_node = cur_node->next;
+      }
+      if (prev_node == NULL)
+        table[cur_org->point[0]][cur_org->point[1]][cur_org->direction] = new_lpart(table_org->point,
+                                          table_org->direction);
+      else
+        prev_node->next = new_lpart(table_org->point,
+                                    table_org->direction);
+      cur_org = &farmer;
+    }
+    cur_org = &cows;
+    for (i = 0; i < 2; i++) {
+      switch (cur_org->direction) {
+        case 0:
+          if (cur_org->point[0] > 0 && 
+              grid[cur_org->point[0] - 1][cur_org->point[1]] == 1)
+            cur_org->point[0]--;
+          else
+            cur_org->direction = 1;
+          break;
+        case 1:
+          if (cur_org->point[1] < 9 && 
+              grid[cur_org->point[0]][cur_org->point[1] + 1] == 1)
+            cur_org->point[1]++;
+          else
+            cur_org->direction = 2;
+          break;
+        case 2:
+          if (cur_org->point[0] < 9 && 
+              grid[cur_org->point[0] + 1][cur_org->point[1]] == 1)
+            cur_org->point[0]++;
+          else
+            cur_org->direction = 3;
+          break;
+        case 3:
+          if (cur_org->point[1] > 0 && 
+              grid[cur_org->point[0]][cur_org->point[1] - 1] == 1)
+            cur_org->point[1]--;
+          else
+            cur_org->direction = 0;
+          break;
+      }
+      cur_org = &farmer;
+    }
+    num_minutes++;
+    if (cows.point[0] == farmer.point[0] && 
+        cows.point[1] == farmer.point[1])
+      break;
+  }
+  fprintf(fout, "%d\n", num_minutes);
+  return 0;
+}

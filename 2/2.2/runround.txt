@@ -1,0 +1,45 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: runround
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int is_runaround(char num_string[]) {
+  char seen_chars[strlen(num_string) + 1];
+  int i, j, char_count = 0, current_index = 0;
+  for (i = 0; i < strlen(num_string); i++) {
+    for (j = 0; j < char_count; j++)
+      if (num_string[current_index] == seen_chars[j] ||
+          num_string[current_index] == '0')
+        return 0;
+    seen_chars[char_count] = num_string[current_index];
+    char_count++;
+    current_index = (current_index + 
+                    atoi((char[2]){num_string[current_index], 0}))
+                     % strlen(num_string);
+  }
+  if (num_string[current_index] != num_string[0])
+    return 0;
+  return 1;
+}
+
+int main(void) {
+  FILE *fin = fopen("runround.in", "r");
+  FILE *fout = fopen("runround.out", "w");
+  unsigned long m;
+  char current_str[10];
+  fscanf(fin, "%ld", &m);
+  int i;
+  for (;;) {
+    m++;
+    sprintf(current_str, "%ld", m);
+    if (is_runaround(current_str) == 1)
+      break;
+  }
+  fprintf(fout, "%ld\n", m);
+  return 0;
+}

@@ -1,0 +1,71 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: concom
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_COMPANIES 100
+
+typedef struct company {
+  int visited;
+  int orig_owned[MAX_COMPANIES];
+  long long owned[MAX_COMPANIES];
+} company;
+
+static company companies[MAX_COMPANIES];
+int controlled[MAX_COMPANIES];
+
+int compare(const void *a, const void *b) {
+  return *((int*)a) - *((int*)b);
+}
+
+void search(int controller_index, int controlled_index) {
+  if (controller_index == controlled_index)
+    return;
+  if (controlled[controlled_index] == 1)
+    return;
+  controlled[controlled_index] = 1;
+  int i;
+  for (i = 0; i < MAX_COMPANIES; i++) {
+    if (!companies[controlled_index].owned[i])
+      continue;
+    if (!companies[controller_index].owned[i])
+      companies[controller_index].owned[i] = 0;
+    companies[controller_index].owned[i] += companies[controlled_index].owned[i];
+    if (companies[controller_index].owned[i] > 50)
+      search(controller_index, i);
+  }
+}
+
+int main(void) {
+  FILE *fin = fopen("concom.in", "r");
+  FILE *fout = fopen("concom.out", "w");
+  int n;
+  fscanf(fin, "%d", &n);
+  int i, j, p, loop1, loop2;
+  for (loop1 = 0; loop1 < n; loop1++) {
+    fscanf(fin, "%d%d%d", &i, &j, &p);
+    companies[i - 1].visited = 1;
+    companies[i - 1].owned[j - 1] = p;
+    companies[i - 1].orig_owned[j - 1] = p;
+  }
+  for (loop1 = 0; loop1 < MAX_COMPANIES; loop1++) {
+    if (!companies[loop1].visited)
+      continue;
+    for (loop2 = 0; loop2 < MAX_COMPANIES; loop2++) {
+      if (!companies[loop1].orig_owned[loop2] || 
+            companies[loop1].orig_owned[loop2] <= 50)
+        continue;
+      search(loop1, loop2);
+    }
+    for (loop2 = 0; loop2 < MAX_COMPANIES; loop2++)
+      if (controlled[loop2] == 1) {
+        fprintf(fout, "%d %d\n", loop1 + 1, loop2 + 1);
+        controlled[loop2] = 0;
+      }
+  }
+  return 0;
+}

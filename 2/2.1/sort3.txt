@@ -1,0 +1,131 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: sort3
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+typedef struct node {
+  int occupied;
+  struct node* to;
+} node;
+
+static int numbers[1000];
+static int numbers_sorted[1000];
+static node* nodes[1000];
+
+node* new_node() {
+  node* n = malloc(sizeof(node));
+  if (n == NULL) {
+    fprintf(stderr, "malloc error\n");
+    exit(1);
+  }
+  n->occupied = 0;
+  return n;
+}
+
+int search(int start, int end, int value) {
+  int current_index = start;
+  while (current_index < end) {
+    if (nodes[current_index]->occupied == 0 &&
+        numbers[current_index] == value) {
+      nodes[current_index]->occupied = 1;
+      return current_index;
+    }
+    current_index++;
+  }
+  return -1;
+}
+
+int compare(const void *a, const void *b) {
+  return (*(int*)a - *(int*)b);
+}
+
+int main(void) {
+  FILE *fin = fopen("sort3.in", "r");
+  FILE *fout = fopen("sort3.out", "w");
+  int n, i, j, one_count = 0, two_count = 0, three_count = 0;
+  int loops = 0, count, current_index, temp;
+  node* current_node;
+  fscanf(fin, "%d", &n);
+  for (i = 0; i < n; i++) {
+    fscanf(fin, "%d", &numbers[i]);
+    numbers_sorted[i] = numbers[i];
+    nodes[i] = new_node();
+    if (numbers[i] == 1)
+      one_count++;
+    else if (numbers[i] == 2)
+      two_count++;
+    else
+      three_count++;
+  }
+  qsort(numbers_sorted, n, sizeof(int), compare);
+  int two_index = one_count, three_index = two_count + one_count;
+  for (i = 0; i < n; i++) {
+    if (numbers[i] != numbers_sorted[i]) {
+      if (numbers[i] == 1) {
+        if (two_index <= i < three_index) {
+          current_index = search(0, two_index, 2);
+          if (current_index == -1)
+            current_index = search(0, two_index, 3);
+        }
+        else {
+          current_index = search(0, two_index, 3);
+          if (current_index == -1)
+            current_index = search(0, two_index, 2);
+        }
+        nodes[i]->to = nodes[current_index];
+      }
+      else if (numbers[i] == 2) {
+        if (0 <= i < two_index) {
+          current_index = search(two_index, three_index, 1);
+          if (current_index == -1)
+            current_index = search(two_index, three_index, 3);
+        }
+        else {
+          current_index = search(two_index, three_index, 3);
+          if (current_index == -1)
+            current_index = search(two_index, three_index, 1);
+        }
+        nodes[i]->to = nodes[current_index];
+      }
+      else {
+        if (0 <= i < two_index) {
+          current_index = search(three_index, n, 1);
+          if (current_index == -1)
+            current_index = search(three_index, n, 2);
+        }
+        else {
+          current_index = search(three_index, n, 2);
+          if (current_index == -1)
+            current_index = search(three_index, n, 1);
+        }
+        nodes[i]->to = nodes[current_index];
+      }
+      temp = numbers[i];
+      numbers[i] = numbers[current_index];
+      numbers[current_index] = temp;
+      loops++;
+    }
+  }
+  /*for (i = 0; i < n; i++) {
+    if (nodes[i]->visited == 1)
+      continue;
+    if (nodes[i] == nodes[i]->to)
+      continue;
+    nodes[i]->visited = 1;
+    current_node = nodes[i]->to;
+    count = 1;
+    while (current_node != nodes[i]) {
+      count++;
+      current_node->visited = 1;
+      current_node = current_node->to;
+    }
+    loops += (int) ceil((double) count / 2);
+  }*/
+  fprintf(fout, "%d\n", loops);
+  return 0;
+}

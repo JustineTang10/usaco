@@ -1,0 +1,81 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: hamming
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#define MAX_N 64
+
+typedef struct component {
+  int parent;
+  int length;
+  int members[MAX_N];
+} component;
+
+int find_hamming(int num1, int num2, int base) {
+  int i, count = 0;
+  for (i = 0; i < base; i++) {
+    if (((num1 % 2) ^ (num2 % 2)) == 1)
+      count++;
+    num1 = (num1 - (num1 % 2)) / 2;
+    num2 = (num2 - (num2 % 2)) / 2;
+  }
+  return count;
+}
+
+int main(void) {
+  FILE *fin = fopen("hamming.in", "r");
+  FILE *fout = fopen("hamming.out", "w");
+  static component* components[255];
+  int num_components = 0, count;
+  int n, b, d, i, j, k;
+  int max[3] = {0, 0, (int) pow(2, b)};
+  fscanf(fin, "%d%d%d", &n, &b, &d);
+  for (i = 0; i < (int) pow(2, b); i++) {
+    for (j = 0; j < num_components; j++) {
+      if (find_hamming(i, components[j]->parent, b) >= d) {
+        for (k = 0; k < components[j]->length; k++)
+          if (find_hamming(i, components[j]->members[k], b) < d)
+            break;
+        if (k == components[j]->length) {
+          components[j]->members[components[j]->length] = i;
+          components[j]->length++;
+          if ((components[j]->length > max[0] || 
+              (components[j]->parent < max[2] && 
+                components[j]->length == max[0])) &&
+                components[j]->length <= n - 1) {
+            max[0] = components[j]->length;
+            max[1] = j;
+            max[2] = components[j]->parent;
+          }
+          break;
+        }
+      }
+    }
+    if (max[0] == n - 1 && max[2] == 0)
+      break;
+    if (j == num_components) {
+      components[num_components] = malloc(sizeof(component));
+      if (components[num_components] == NULL) {
+        fprintf(stderr, "malloc error\n");
+        exit(1);
+      }
+      components[num_components]->parent = i;
+      components[num_components]->length = 0;
+      num_components++;
+    }
+  }
+  fprintf(fout, "%d ", components[max[1]]->parent);
+  for (i = 1; i < n; i++) {
+    fprintf(fout, "%d", components[max[1]]->members[i - 1]);
+    if ((i + 1) % 10 == 0 || i == n - 1)
+      fprintf(fout, "\n");
+    else
+      fprintf(fout, " ");
+  }
+  return 0;
+}

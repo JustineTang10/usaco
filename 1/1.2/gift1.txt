@@ -1,0 +1,78 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: gift1
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct person {
+  char name[15];
+  int money;
+  int gift_money;
+  int num_gifts;
+  struct person *people[9];
+} person;
+
+person *find_person(person *people_list[], int num_people, 
+                    char name[]) {
+  for (int i = 0; i < num_people; i++) {
+    if (strcmp(people_list[i]->name, name) == 0)
+      return people_list[i];
+  }
+  return NULL;
+}
+
+person *new_person() {
+  person *p = malloc(sizeof(person));
+  if (p == NULL) {
+    fprintf(stderr, "malloc error\n");
+    exit(1);
+  }
+  return p;
+}
+
+int main(void) {
+  FILE *fin = fopen("gift1.in", "r");
+  FILE *fout = fopen("gift1.out", "w");
+  int np, i, j, money, others_money;
+  person *current_person;
+  char current_name[14], target_name[14];
+  fscanf(fin, "%d", &np);
+  person *people_list[np];
+  for (i = 0; i < np; i++) {
+    current_person = new_person();
+    fscanf(fin, "%s", current_person->name);
+    people_list[i] = current_person;
+  }
+  for (i = 0; i < np; i++) {
+    fscanf(fin, "%s", current_name);
+    current_person = find_person(people_list, np, current_name);
+    fscanf(fin, "%d%d", &money, &current_person->num_gifts);
+    current_person->money = -1 * money;
+    current_person->gift_money = money;
+    for (j = 0; j < current_person->num_gifts; j++) {
+      fscanf(fin, "%s", target_name);
+      current_person->people[j] = find_person(people_list, np, 
+                                              target_name);
+    }
+  }
+  
+  for (i = 0; i < np; i++) {
+    if (people_list[i]->num_gifts == 0)
+      continue;
+    people_list[i]->money += people_list[i]->gift_money % 
+                          people_list[i]->num_gifts;
+    others_money = (people_list[i]->gift_money - 
+    (people_list[i]->gift_money % people_list[i]->num_gifts)) / 
+                                  people_list[i]->num_gifts;
+    for (j = 0; j < people_list[i]->num_gifts; j++)
+      people_list[i]->people[j]->money += others_money;
+  }
+  for (i = 0; i < np; i++)
+    fprintf(fout, "%s %d\n", people_list[i]->name, 
+            people_list[i]->money);
+  return 0;
+}

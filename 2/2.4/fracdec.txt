@@ -1,0 +1,122 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: fracdec
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#define MAX_ND 100000
+
+typedef struct step {
+  int divisor;
+  int remainder;
+  int is_repeat;
+  struct step* next_decimal;
+  struct step* next_hash;
+} step;
+
+static step* table[MAX_ND];
+
+step* new_step(int divisor, int remainder) {
+  step* s = malloc(sizeof(step));
+  if (s == NULL) {
+    fprintf(stderr, "malloc error\n");
+    exit(1);
+  }
+  s->divisor = divisor;
+  s->remainder = remainder;
+  s->is_repeat = 0;
+  s->next_decimal = NULL;
+  s->next_hash = NULL;
+  return s;
+}
+
+int main(void) {
+  FILE *fin = fopen("fracdec.in", "r");
+  FILE *fout = fopen("fracdec.out", "w");
+  int n, d, i;
+  fscanf(fin, "%d%d", &n, &d);
+  fprintf(fout, "%d.", (int) n / d);
+  int num_chars = 1;
+  if ((int) n / d > 0)
+    num_chars = floor(log10(abs((int) n / d))) + 1;
+  n = n % d;
+  step *cur_step = NULL, *prev_step, *table_step; 
+  step *first_step = NULL;
+  for (i = 0; i < d; i++)
+    table[i] = NULL;
+  for (;;) {
+    n *= 10;
+    prev_step = cur_step;
+    table_step = table[n % d];
+    while (table_step != NULL) {
+      if (table_step->divisor == (int) n / d) {
+        table_step->is_repeat = 1;
+        if (prev_step != NULL && prev_step != table_step)
+          prev_step->is_repeat = 1;
+        else
+          table_step->is_repeat = 2;
+        break;
+      }
+      table_step = table_step->next_hash;
+    }
+    if (table_step != NULL)
+      break;
+    cur_step = new_step((int) n / d, n % d);
+    cur_step->next_hash = table[n % d];
+    table[n % d] = cur_step;
+    if (prev_step != NULL)
+      prev_step->next_decimal = cur_step;
+    else
+      first_step = cur_step;
+    if (n % d == 0)
+      break;
+    n = n % d;
+  }
+  cur_step = first_step;
+  if (cur_step == NULL) {
+    fprintf(fout, "0\n");
+    return 0;
+  }
+  int repeat_count = 0;
+  char char_queue[3], current_char;
+  int queue_len;
+  while (cur_step != NULL) {
+    queue_len = 0;
+    if (cur_step->is_repeat == 1) {
+      if (repeat_count == 0) {
+        char_queue[queue_len] = '(';
+        queue_len++;
+      }
+      repeat_count++;
+    }
+    if (cur_step->is_repeat == 2) {
+      char_queue[0] = '(';
+      char_queue[1] = cur_step->divisor + '0';
+      char_queue[2] = ')';
+      queue_len = 3;
+    }
+    else {
+      char_queue[queue_len] = cur_step->divisor + '0';
+      queue_len++;
+      if (repeat_count == 2) {
+        char_queue[queue_len] = ')';
+        queue_len++;
+      }
+    }
+    for (i = 0; i < queue_len; i++) {
+      num_chars++;
+      if (num_chars >= 76) {
+        fprintf(fout, "\n");
+        num_chars = 0;
+      }
+      fprintf(fout, "%c", char_queue[i]);
+    }
+    cur_step = cur_step->next_decimal;
+  }
+  fprintf(fout, "\n");
+  return 0;
+}

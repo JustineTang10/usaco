@@ -1,0 +1,37 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: humble
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <limits.h>
+
+#define MAX_N 100000
+
+int main(void) {
+  FILE *fin = fopen("humble.in", "r");
+  FILE *fout = fopen("humble.out", "w");
+  int k, n;
+  fscanf(fin, "%d%d", &k, &n);
+  int s[k], indices[k], i, j;
+  for (i = 0; i < k; i++) {
+    indices[i] = 0;
+    fscanf(fin, "%d", &s[i]);
+  }
+  static long dp[MAX_N + 1];
+  dp[0] = 1;
+  for (i = 1; i <= n; i++) {
+    dp[i] = LONG_MAX;
+    for (j = 0; j < k; j++) {
+      if (dp[indices[j]] * s[j] < dp[i])
+        dp[i] = dp[indices[j]] * s[j];
+    }
+    for (j = 0; j < k; j++)
+      if (dp[i] % s[j] == 0)
+        indices[j]++;
+  }
+  fprintf(fout, "%ld\n", dp[n]);
+  return 0;
+}

@@ -1,0 +1,225 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: msquare
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define hashsize(n) ((unsigned long)1 << (n))
+#define hashmask(n) (hashsize(n) - 1)
+
+typedef struct square {
+  int pattern[8];
+  char* seq;
+  int num_seq;
+  int seq_space;
+  struct square* next;
+} square;
+
+square target_square;
+
+square a(square orig_square) {
+  int i, temp;
+  for (i = 0; i < 4; i++) {
+    temp = orig_square.pattern[i];
+    orig_square.pattern[i] = orig_square.pattern[7 - i];
+    orig_square.pattern[7 - i] = temp;
+  }
+  return orig_square;
+}
+
+square b(square orig_square) {
+  int temp;
+  temp = orig_square.pattern[3];
+  orig_square.pattern[3] = orig_square.pattern[2];
+  orig_square.pattern[2] = orig_square.pattern[1];
+  orig_square.pattern[1] = orig_square.pattern[0];
+  orig_square.pattern[0] = temp;
+  temp = orig_square.pattern[4];
+  orig_square.pattern[4] = orig_square.pattern[5];
+  orig_square.pattern[5] = orig_square.pattern[6];
+  orig_square.pattern[6] = orig_square.pattern[7];
+  orig_square.pattern[7] = temp;
+  return orig_square;
+}
+
+square c(square orig_square) {
+  int temp = orig_square.pattern[2];
+  orig_square.pattern[2] = orig_square.pattern[1];
+  orig_square.pattern[1] = orig_square.pattern[6];
+  orig_square.pattern[6] = orig_square.pattern[5];
+  orig_square.pattern[5] = temp;
+  return orig_square;
+}
+
+unsigned long oaat(square key) {
+  unsigned long i;
+  unsigned long hash = 0;
+  for (i = 0; i < 8; i++) {
+    hash += key.pattern[i];
+    hash += (hash << 10);
+    hash ^= (hash >> 6);
+  }
+  hash += (hash << 3);
+  hash ^= (hash >> 11);
+  hash += (hash << 15);
+  return hash & hashmask(16);
+}
+
+square* new_square() {
+  square* l = malloc(sizeof(square));
+  if (l == NULL) {
+    fprintf(stderr, "malloc error\n");
+    exit(1);
+  }
+  l->seq = malloc(sizeof(char) * 101);
+  if (l->seq == NULL) {
+    fprintf(stderr, "malloc error\n");
+    exit(1);
+  }
+  l->num_seq = 0;
+  l->seq_space = 100;
+  return l;
+}
+
+int main(void) {
+  FILE *fin = fopen("msquare.in", "r");
+  FILE *fout = fopen("msquare.out", "w");
+  static square* queue[40320];
+  static square* new_queue[40320];
+  static square* table[65536] = {NULL};
+  int i, j, k;
+  queue[0] = new_square();
+  for (i = 0; i < 8; i++) {
+    queue[0]->pattern[i] = i + 1;
+    fscanf(fin, "%d", &target_square.pattern[i]);
+  }
+  int queue_len = 1, new_queue_len;
+  square cur_square;
+  square *cur_link, *add_link;
+  unsigned long hash;
+  for (;;) {
+    new_queue_len = 0;
+    for (i = 0; i < queue_len; i++) {
+      for (j = 0; j < 8; j++)
+        if (queue[i]->pattern[j] != target_square.pattern[j])
+          break;
+      if (j == 8) {
+        queue[i]->seq[queue[i]->num_seq] = 0;
+        fprintf(fout, "%d", queue[i]->num_seq);
+        for (k = 0; k < queue[i]->num_seq; k++) {
+          if (k % 60 == 0)
+            fprintf(fout, "\n");
+          fprintf(fout, "%c", queue[i]->seq[k]);
+        }
+        if (queue[i]->num_seq == 0)
+          fprintf(fout, "\n");
+        fprintf(fout, "\n");
+        exit(0);
+      }
+      cur_square = a(*queue[i]);
+      hash = oaat(cur_square);
+      cur_link = table[hash];
+      while (cur_link != NULL) {
+        for (j = 0; j < 8; j++)
+          if (cur_link->pattern[j] != cur_square.pattern[j])
+            break;
+        if (j == 8)
+          break;
+        cur_link = cur_link->next;
+      }
+      if (cur_link == NULL) {
+        add_link = new_square();
+        for (j = 0; j < 8; j++)
+          add_link->pattern[j] = cur_square.pattern[j];
+        strcpy(add_link->seq, queue[i]->seq);
+        add_link->num_seq = queue[i]->num_seq;
+        add_link->seq_space = queue[i]->seq_space;
+        add_link->seq[add_link->num_seq++] = 'A';
+        if (add_link->num_seq == add_link->seq_space) {
+          add_link->seq = realloc(add_link->seq, 
+                sizeof(char) * (add_link->seq_space + 100) + 1);
+          if (add_link->seq == NULL) {
+            fprintf(stderr, "realloc error\n");
+            exit(1);
+          }
+          add_link->seq_space += 100;
+        }
+        new_queue[new_queue_len++] = add_link;
+        add_link->next = table[hash];
+        table[hash] = add_link;
+      }
+      cur_square = b(*queue[i]);
+      hash = oaat(cur_square);
+      cur_link = table[hash];
+      while (cur_link != NULL) {
+        for (j = 0; j < 8; j++)
+          if (cur_link->pattern[j] != cur_square.pattern[j])
+            break;
+        if (j == 8)
+          break;
+        cur_link = cur_link->next;
+      }
+      if (cur_link == NULL) {
+        add_link = new_square();
+        for (j = 0; j < 8; j++)
+          add_link->pattern[j] = cur_square.pattern[j];
+        strcpy(add_link->seq, queue[i]->seq);
+        add_link->num_seq = queue[i]->num_seq;
+        add_link->seq_space = queue[i]->seq_space;
+        add_link->seq[add_link->num_seq++] = 'B';
+        if (add_link->num_seq == add_link->seq_space) {
+          add_link->seq = realloc(add_link->seq, 
+                sizeof(char) * (add_link->seq_space + 100) + 1);
+          if (add_link->seq == NULL) {
+            fprintf(stderr, "realloc error\n");
+            exit(1);
+          }
+          add_link->seq_space += 100;
+        }
+        new_queue[new_queue_len++] = add_link;
+        add_link->next = table[hash];
+        table[hash] = add_link;
+      }
+      cur_square = c(*queue[i]);
+      hash = oaat(cur_square);
+      cur_link = table[hash];
+      while (cur_link != NULL) {
+        for (j = 0; j < 8; j++)
+          if (cur_link->pattern[j] != cur_square.pattern[j])
+            break;
+        if (j == 8)
+          break;
+        cur_link = cur_link->next;
+      }
+      if (cur_link == NULL) {
+        add_link = new_square();
+        for (j = 0; j < 8; j++)
+          add_link->pattern[j] = cur_square.pattern[j];
+        strcpy(add_link->seq, queue[i]->seq);
+        add_link->num_seq = queue[i]->num_seq;
+        add_link->seq_space = queue[i]->seq_space;
+        add_link->seq[add_link->num_seq++] = 'C';
+        if (add_link->num_seq == add_link->seq_space) {
+          add_link->seq = realloc(add_link->seq, 
+                sizeof(char) * (add_link->seq_space + 100) + 1);
+          if (add_link->seq == NULL) {
+            fprintf(stderr, "realloc error\n");
+            exit(1);
+          }
+          add_link->seq_space += 100;
+        }
+        new_queue[new_queue_len++] = add_link;
+        add_link->next = table[hash];
+        table[hash] = add_link;
+      }
+    }
+    for (i = 0; i < new_queue_len; i++)
+      queue[i] = new_queue[i];
+    queue_len = new_queue_len;
+  }
+  return 0;
+}

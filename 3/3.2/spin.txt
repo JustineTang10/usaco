@@ -1,0 +1,68 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: spin
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define inbetween(a, b, c) ((a <= b && b <= c) ? 1 : 0)
+
+typedef struct wheel {
+  int speed;
+  int num_wedges;
+  int wedges[5][2];
+  int position;
+} wheel;
+
+int main(void) {
+  FILE *fin = fopen("spin.in", "r");
+  FILE *fout = fopen("spin.out", "w");
+  wheel wheels[5];
+  int i, j, k, start, extent;
+  for (i = 0; i < 5; i++) {
+    fscanf(fin, "%d%d", &wheels[i].speed, &wheels[i].num_wedges);
+    wheels[i].position = 0;
+    for (j = 0; j < wheels[i].num_wedges; j++) {
+      fscanf(fin, "%d%d", &start, &extent);
+      wheels[i].wedges[j][0] = start;
+      wheels[i].wedges[j][1] = (start + extent) % 360;
+    }
+  }
+  int num_loop = 0;
+  int count;
+  for (num_loop = 0; num_loop < 360; num_loop++) {
+    for (i = 0; i < 360; i++) {
+      count = 0;
+      for (j = 0; j < 5; j++)
+        for (k = 0; k < wheels[j].num_wedges; k++)
+          if ((wheels[j].wedges[k][0] > wheels[j].wedges[k][1] && 
+              ((i < wheels[j].wedges[k][0] && 
+                i <= wheels[j].wedges[k][1]) || 
+                inbetween(wheels[j].wedges[k][0], i, 
+                wheels[j].wedges[k][1] + 360) == 1)) || 
+              inbetween(wheels[j].wedges[k][0], i, 
+              wheels[j].wedges[k][1]) == 1) {
+            count++;
+            break;
+          }
+      if (count == 5) {
+        fprintf(fout, "%d\n", num_loop);
+        exit(0);
+      }
+    }
+    for (i = 0; i < 5; i++) {
+      wheels[i].position = (wheels[i].position + wheels[i].speed) 
+                            % 360;
+      for (j = 0; j < wheels[i].num_wedges; j++) {
+        wheels[i].wedges[j][0] = (wheels[i].wedges[j][0] + 
+                                  wheels[i].speed) % 360;
+        wheels[i].wedges[j][1] = (wheels[i].wedges[j][1] + 
+                                  wheels[i].speed) % 360;
+      }
+    }
+  }
+  fprintf(fout, "none\n");
+  return 0;
+}

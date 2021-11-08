@@ -1,0 +1,113 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: ditch
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#define MAX_M 200
+
+typedef struct edge {
+  int to, rate;
+  struct edge* next;
+} edge;
+
+int main(void) {
+  FILE *fin = fopen("ditch.in", "r");
+  FILE *fout = fopen("ditch.out", "w");
+  static edge* adj_list[MAX_M] = {NULL};
+  static int distances[MAX_M][3];
+  static edge* edge_table[MAX_M][MAX_M] = {NULL};
+  int n, m, i;
+  fscanf(fin, "%d%d", &n, &m);
+  int s, e;
+  edge* cur_edge;
+  for (i = 0; i < n; i++) {
+    fscanf(fin, "%d%d", &s, &e);
+    cur_edge = malloc(sizeof(edge));
+    if (cur_edge == NULL) {
+      fprintf(stderr, "malloc error\n");
+      exit(1);
+    }
+    cur_edge->to = e - 1;
+    fscanf(fin, "%d", &cur_edge->rate);
+    cur_edge->next = adj_list[s - 1];
+    adj_list[s - 1] = cur_edge;
+    edge_table[s - 1][e - 1] = cur_edge;
+  }
+  int cur_parent, cur_max, cur_min, cur_vertex, max_flow = 0;
+  for (;;) {
+    for (i = 0; i < m; i++) {
+      distances[i][0] = -1;
+      distances[i][1] = 0;
+      distances[i][2] = -1;
+    }
+    cur_parent = 0;
+    distances[cur_parent][0] = 0;
+    for (;;) {
+      distances[cur_parent][1] = 1;
+      cur_edge = adj_list[cur_parent];
+      while (cur_edge != NULL) {
+        if (cur_edge->rate != -1 &&
+            distances[cur_parent][0] + cur_edge->rate > 
+            distances[cur_edge->to][0] && 
+            distances[cur_edge->to][1] == 0) {
+          distances[cur_edge->to][0] = distances[cur_parent][0] + 
+                                        cur_edge->rate;
+          distances[cur_edge->to][2] = cur_parent;
+        }
+        cur_edge = cur_edge->next;
+      }
+      cur_parent = -1;
+      cur_max = -1;
+      for (i = 0; i < m; i++)
+        if (cur_max < distances[i][0] && distances[i][1] == 0) {
+          cur_parent = i;
+          cur_max = distances[i][0];
+        }
+      if (cur_parent == -1 || cur_parent == m - 1)
+        break;
+    }
+    if (cur_parent == -1)
+      break;
+    cur_min = INFINITY;
+    cur_vertex = m - 1;
+    while (distances[cur_vertex][2] != -1) {
+      if (cur_min > distances[cur_vertex][0] - 
+                    distances[distances[cur_vertex][2]][0])
+        cur_min = distances[cur_vertex][0] - 
+                  distances[distances[cur_vertex][2]][0];
+      cur_vertex = distances[cur_vertex][2];
+    }
+    max_flow += cur_min;
+    cur_vertex = m - 1;
+    while (distances[cur_vertex][2] != -1) {
+      edge_table[distances[cur_vertex][2]][cur_vertex]->rate -= 
+        cur_min;
+      if (edge_table[distances[cur_vertex][2]][cur_vertex]->rate 
+            == 0)
+        edge_table[distances[cur_vertex][2]][cur_vertex]->rate = -1;
+      if (edge_table[cur_vertex][distances[cur_vertex][2]] != NULL)
+        edge_table[cur_vertex][distances[cur_vertex][2]]->rate += 
+          cur_min;
+      else {
+        cur_edge = malloc(sizeof(edge));
+        if (cur_edge == NULL) {
+          fprintf(stderr, "malloc error\n");
+          exit(1);
+        }
+        cur_edge->to = distances[cur_vertex][2];
+        cur_edge->rate = cur_min;
+        cur_edge->next = adj_list[cur_vertex];
+        adj_list[cur_vertex] = cur_edge;
+        edge_table[cur_vertex][distances[cur_vertex][2]] = cur_edge;
+      }
+      cur_vertex = distances[cur_vertex][2];
+    }
+  }
+  fprintf(fout, "%d\n", max_flow);
+  return 0;
+}

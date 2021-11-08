@@ -1,0 +1,45 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: nuggets
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(void) {
+  FILE *fin = fopen("nuggets.in", "r");
+  FILE *fout = fopen("nuggets.out", "w");
+  static int dp[256 * 256 + 1];
+  int n, i, j;
+  fscanf(fin, "%d", &n);
+  int packages[n], min = 257;
+  for (i = 0; i < n; i++) {
+    fscanf(fin, "%d", &packages[i]);
+    if (min > packages[i])
+      min = packages[i];
+  }
+  int cur_streak = 0, last_num = 0;
+  dp[0] = 1;
+  for (i = 1; i <= 256 * 256; i++) {
+    dp[i] = 0;
+    for (j = 0; j < n; j++)
+      if (i >= packages[j] && dp[i - packages[j]] == 1) {
+        dp[i] = 1;
+        break;
+      }
+    if (j == n) {
+      cur_streak = 0;
+      last_num = i;
+    }
+    else {
+      cur_streak++;
+      if (cur_streak == min) {
+        fprintf(fout, "%d\n", last_num);
+        exit(0);
+      }
+    }
+  }
+  fprintf(fout, "0\n");
+  return 0;
+}

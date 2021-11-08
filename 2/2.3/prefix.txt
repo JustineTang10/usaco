@@ -1,0 +1,95 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: prefix
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_PRIMITIVES 200
+#define PRIMITIVE_LEN 10
+#define MAX_LEN_S 200000
+
+static int hash_table[MAX_LEN_S + 1];
+static char primitives[MAX_PRIMITIVES][PRIMITIVE_LEN + 1];
+static char s[MAX_LEN_S + 1];
+int num_primitives = 0, len_s = 0;
+int cur_max = 0, num_max = 1, running = 0, longest_len = 0;
+
+int max(int val1, int val2) {
+  if (val1 > val2)
+    return val1;
+  return val2;
+}
+
+int search(char sequence[], int count, FILE* fout) {
+  if (hash_table[count])
+    return hash_table[count];
+  int max_count = count;
+  register int i, j;
+  for (i = 0; i < num_primitives; i++) {
+    if (strncmp(sequence, primitives[i], 
+                strlen(primitives[i])) == 0) {
+      max_count = max(search(sequence + strlen(primitives[i]), 
+                              count + strlen(primitives[i]),
+                              fout), max_count);
+    }
+  }
+  hash_table[count] = max_count;
+  if (cur_max == max_count)
+    num_max++;
+  else
+    num_max = 1;
+  if (num_max >= 10 && running == 0) {
+    running = 1;
+    int temp = cur_max;
+    for (i = temp - longest_len; i <= temp; ++i) {
+      if (hash_table[i]) {
+        if (hash_table[i] > temp)
+          break;
+        continue;
+      }
+      if (search(s + i, i, fout) > temp)
+        break;
+    }
+    if (i >= temp) {
+      fprintf(fout, "%d\n", temp);
+      exit(0);
+    }
+    running = 0;
+  }
+  cur_max = max_count;
+  return max_count;
+}
+
+int main(void) { // 199049
+  FILE *fin = fopen("prefix.in", "r");
+  FILE *fout = fopen("prefix.out", "w");
+  char cur_primitive[PRIMITIVE_LEN + 1];
+  fscanf(fin, "%s ", cur_primitive);
+  while (strcmp(cur_primitive, ".") != 0) {
+    strcpy(primitives[num_primitives], cur_primitive);
+    num_primitives++;
+    longest_len = max(longest_len, strlen(cur_primitive));
+    fscanf(fin, "%s ", cur_primitive);
+  }
+  register int i, j;
+  char temp[PRIMITIVE_LEN + 1];
+  for (i = 0; i < num_primitives; ++i)
+    for (j = i + 1; j < num_primitives; ++j)
+      if (strlen(primitives[i]) < strlen(primitives[j])) {
+        strcpy(temp, primitives[i]);
+        strcpy(primitives[i], primitives[j]);
+        strcpy(primitives[j], temp);
+      }
+  char ch;
+  fscanf(fin, "%c", &ch);
+  do {
+    if (ch != '\n')
+      s[len_s++] = ch;
+  } while ((fscanf(fin, "%c", &ch)) != EOF);
+  fprintf(fout, "%d\n", search(s, 0, fout));
+  return 0;
+}

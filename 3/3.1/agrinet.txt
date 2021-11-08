@@ -1,0 +1,48 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: agrinet
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_FARMS 100
+#define MAX_WEIGHT 100000
+
+int main(void) {
+  FILE *fin = fopen("agrinet.in", "r");
+  FILE *fout = fopen("agrinet.out", "w");
+  static int matrix[MAX_FARMS][MAX_FARMS];
+  int n;
+  fscanf(fin, "%d", &n);
+  int distances[n], in_tree[n];
+  int i, j;
+  for (i = 0; i < n; i++) {
+    distances[i] = MAX_WEIGHT + 1;
+    in_tree[i] = 0;
+    for (j = 0; j < n; j++)
+      fscanf(fin, "%d", &matrix[i][j]);
+  }
+  int cur_node, cost = 0;
+  for (;;) {
+    cur_node = -1;
+    for (i = 0; i < n; i++)
+      if (in_tree[i] == 0 && (cur_node == -1 || 
+          distances[i] < distances[cur_node]))
+        cur_node = i;
+    if (cur_node == -1)
+      break;
+    in_tree[cur_node] = 1;
+    if (distances[cur_node] <= MAX_WEIGHT)
+      cost += distances[cur_node];
+    for (i = 0; i < n; i++) {
+      if (cur_node == i)
+        continue;
+      if (in_tree[i] == 0 && distances[i] > matrix[cur_node][i])
+        distances[i] = matrix[cur_node][i];
+    }
+  }
+  fprintf(fout, "%d\n", cost);
+  return 0;
+}

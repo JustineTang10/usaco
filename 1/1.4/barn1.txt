@@ -1,0 +1,42 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: barn1
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int compare(const void *a, const void *b) {
+  return (*(int*)a - *(int*)b);
+}
+
+int main(void) {
+  FILE *fin = fopen("barn1.in", "r");
+  FILE *fout = fopen("barn1.out", "w");
+  int m, s, c, i, previous = 0, count = 0, boards, stalls;
+  fscanf(fin, "%d%d%d", &m, &s, &c);
+  int gaps[s - c], stall_numbers[c];
+  for (i = 0; i < c; i++)
+    fscanf(fin, "%d", &stall_numbers[i]);
+  qsort(stall_numbers, c, sizeof(int), compare);
+  for (i = 0; i < c; i++) {
+    if (previous > 0 && stall_numbers[i] - previous > 1) {
+      gaps[count] = stall_numbers[i] - previous;
+      count++;
+    }
+    previous = stall_numbers[i];
+  }
+  qsort(gaps, count, sizeof(int), compare);
+  boards = count + 1;
+  stalls = c;
+  count = 0;
+  while (boards > m) {
+    stalls += gaps[count] - 1;
+    boards--;
+    count++;
+  }
+  fprintf(fout, "%d\n", stalls);
+  return 0;
+}

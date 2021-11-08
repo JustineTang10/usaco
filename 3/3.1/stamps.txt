@@ -1,0 +1,34 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: stamps
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(void) {
+  FILE *fin = fopen("stamps.in", "r");
+  FILE *fout = fopen("stamps.out", "w");
+  static int dp[2000001] = {0};
+  int k, n;
+  fscanf(fin, "%d%d", &k, &n);
+  int stamps[n], i, j, max_stamp = 0;
+  for (i = 0; i < n; i++) {
+    fscanf(fin, "%d", &stamps[i]);
+    if (stamps[i] > max_stamp)
+      max_stamp = stamps[i];
+  }
+  for (i = 0; i < max_stamp * k; i++) {
+    for (j = 0; j < n; j++)
+      if (i >= stamps[j] && 
+          (dp[i - stamps[j]] + 1 < dp[i] || dp[i] == 0))
+        dp[i] = dp[i - stamps[j]] + 1;
+    if (dp[i] > k) {
+      fprintf(fout, "%d\n", i - 1);
+      exit(0);
+    }
+  }
+  fprintf(fout, "%d\n", max_stamp * k);
+  return 0;
+}

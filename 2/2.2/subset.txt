@@ -1,0 +1,44 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: subset
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+static int memo[390][39];
+
+int search(int total, int max) {
+  if (total - max == 0) {
+    memo[total][max] = 1;
+    return 1;
+  }
+  if (memo[total][max] > -1)
+    return memo[total][max];
+  int count = 0;
+  for (int i = max - 1; i >= 1; i--) {
+    if (i > total - max)
+      continue;
+    count += search(total - max, i);
+  }
+  memo[total][max] = count;
+  return count;
+}
+
+int main(void) {
+  FILE *fin = fopen("subset.in", "r");
+  FILE *fout = fopen("subset.out", "w");
+  int n;
+  fscanf(fin, "%d", &n);
+  if (((n * (n + 1)) / 2) % 2 == 1) {
+    fprintf(fout, "0\n");
+    return 0;
+  }
+  int i, j;
+  for (i = 0; i <= (n * (n + 1)) / 4; i++)
+    for (j = 0; j <= n; j++)
+      memo[i][j] = -1;
+  fprintf(fout, "%d\n", search((n * (n + 1)) / 4, n));
+  return 0;
+}

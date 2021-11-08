@@ -1,0 +1,73 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: heritage
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct node {
+  char c;
+  struct node *left, *right;
+} node;
+
+node* form_tree(char in_order[], char pre_order[], int len) {
+  if (len == 0)
+    return NULL;
+  node* cur_node = malloc(sizeof(node));
+  if (cur_node == NULL) {
+    fprintf(stderr, "malloc error\n");
+    exit(1);
+  }
+  cur_node->c = pre_order[0];
+  char new_in_order[26], new_pre_order[26], unstring[1] = {0};
+  int i, count = 0, prev_count;
+  for (i = 0; i < len; i++) {
+    if (in_order[i] == pre_order[0]) {
+      strncpy(new_pre_order, pre_order, count + 1);
+      cur_node->left = form_tree(new_in_order, new_pre_order + 1, 
+                                  count);
+      prev_count = count;
+      count = 0;
+      strcpy(new_in_order, unstring);
+    }
+    else
+      new_in_order[count++] = in_order[i];
+  }
+  cur_node->right = form_tree(new_in_order, 
+                              pre_order + prev_count + 1, count);
+  return cur_node;
+}
+
+void traverse(node* root, int* count, char string[]) {
+  if (root->left != NULL)
+    traverse(root->left, count, string);
+  if (root->right != NULL)
+    traverse(root->right, count, string);
+  string[*count] = root->c;
+  (*count)++;
+}
+
+int main(void) {
+  FILE *fin = fopen("heritage.in", "r");
+  FILE *fout = fopen("heritage.out", "w");
+  char in_order[27], pre_order[27], post_order[27];
+  char current_char;
+  int len = 0, i;
+  fscanf(fin, "%c", &current_char);
+  while (current_char != '\n') {
+    in_order[len++] = current_char;
+    fscanf(fin, "%c", &current_char);
+  }
+  for (i = 0; i < len; i++)
+    fscanf(fin, "%c", &pre_order[i]);
+  node* tree = form_tree(in_order, pre_order, len);
+  int count = 0;
+  traverse(tree, &count, post_order);
+  for (i = 0; i < count; i++)
+    fprintf(fout, "%c", post_order[i]);
+  fprintf(fout, "\n");
+  return 0;
+}

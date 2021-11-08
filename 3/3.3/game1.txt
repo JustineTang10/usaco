@@ -1,0 +1,49 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: game1
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_NUMBERS 100
+
+static int dp[MAX_NUMBERS][MAX_NUMBERS][2];
+
+int main(void) {
+  FILE *fin = fopen("game1.in", "r");
+  FILE *fout = fopen("game1.out", "w");
+  int n, i, j;
+  fscanf(fin, "%d", &n);
+  int board[n];
+  for (i = 0; i < n; i++) {
+    fscanf(fin, "%d", &board[i]);
+    dp[0][i][(n + 1) % 2] = board[i];
+    dp[0][i][n % 2] = 0;
+  }
+  int player = n % 2, first[2], last[2];
+  for (i = 1; i < n; i++) {
+    for (j = 0; j < n - i; j++) {
+      first[0] = dp[i - 1][j][0];
+      first[1] = dp[i - 1][j][1];
+      last[0] = dp[i - 1][j + 1][0];
+      last[1] = dp[i - 1][j + 1][1];
+      first[player] += board[i + j];
+      last[player] += board[j];
+      if (first[player] > last[player] || 
+          (first[player] == last[player] && 
+            first[1 - player] < last[1 - player])) {
+        dp[i][j][player] = first[player];
+        dp[i][j][1 - player] = first[1 - player];
+      }
+      else {
+        dp[i][j][player] = last[player];
+        dp[i][j][1 - player] = last[1 - player];
+      }
+    }
+    player = 1 - player;
+  }
+  fprintf(fout, "%d %d\n", dp[n - 1][0][0], dp[n - 1][0][1]);
+  return 0;
+}

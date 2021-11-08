@@ -1,0 +1,64 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: beads
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main(void) {
+  FILE *fin = fopen("beads.in", "r");
+  FILE *fout = fopen("beads.out", "w");
+  int n, index, max_tally = 0, current_tally, count;
+  char allowed_bead;
+  fscanf(fin, "%d", &n);
+  char necklace[n + 1];
+  fscanf(fin, "%s", necklace);
+  for (int i = 0; i < n; i++) {
+    current_tally = 0;
+    index = i - 1;
+    allowed_bead = 'w';
+    count = 0;
+    while (allowed_bead != 'n' && count < n) {
+      if (index < 0)
+        index += n;
+      if (allowed_bead == 'w') {
+        allowed_bead = necklace[index];
+        current_tally++;
+      }
+      else if (necklace[index] == 'w' || allowed_bead == 
+                                          necklace[index])
+        current_tally++;
+      else
+        allowed_bead = 'n';
+      index--;
+      count++;
+    }
+    index = i;
+    allowed_bead = 'w';
+    count = 0;
+    while (allowed_bead != 'n' && count < n) {
+      if (index >= n)
+        index -= n;
+      if (allowed_bead == 'w') {
+        allowed_bead = necklace[index];
+        current_tally++;
+      }
+      else if (necklace[index] == 'w' || allowed_bead == 
+                                          necklace[index])
+        current_tally++;
+      else
+        allowed_bead = 'n';
+      index++;
+      count++;
+    }
+    if (current_tally > max_tally)
+      max_tally = current_tally;
+  }
+  if (max_tally > n)
+    max_tally = n;
+  fprintf(fout, "%d\n", max_tally);
+  return 0;
+}

@@ -1,0 +1,25 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: fact4
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(void) {
+  FILE *fin = fopen("fact4.in", "r");
+  FILE *fout = fopen("fact4.out", "w");
+  int n;
+  fscanf(fin, "%d", &n);
+  int fact = 1;
+  int i;
+  for (i = 1; i <= n; i++) {
+    fact *= i;
+    while (fact % 10 == 0)
+      fact /= 10;
+    fact = fact % 1000000;
+  }
+  fprintf(fout, "%d\n", fact % 10);
+  return 0;
+}

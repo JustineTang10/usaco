@@ -1,0 +1,142 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: race3
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_N 50
+
+typedef struct edge {
+  int to;
+  struct edge* next;
+} edge;
+
+int main(void) {
+  FILE *fin = fopen("race3.in", "r");
+  FILE *fout = fopen("race3.out", "w");
+  static edge* adj_list[MAX_N] = {NULL};
+  static edge* rev_adj_list[MAX_N] = {NULL};
+  static int distances[MAX_N][2];
+  int n = 0, cur_number;
+  edge* cur_edge;
+  for (;;) {
+    for (;;) {
+      fscanf(fin, "%d", &cur_number);
+      if (cur_number < 0)
+        break;
+      cur_edge = malloc(sizeof(edge));
+      if (cur_edge == NULL) {
+        fprintf(stderr, "malloc error\n");
+        exit(1);
+      }
+      cur_edge->to = cur_number;
+      cur_edge->next = adj_list[n];
+      adj_list[n] = cur_edge;
+      cur_edge = malloc(sizeof(edge));
+      if (cur_edge == NULL) {
+        fprintf(stderr, "malloc error\n");
+        exit(1);
+      }
+      cur_edge->to = cur_number;
+      cur_edge->next = rev_adj_list[n];
+      rev_adj_list[n] = cur_edge;
+      cur_edge = malloc(sizeof(edge));
+      if (cur_edge == NULL) {
+        fprintf(stderr, "malloc error\n");
+        exit(1);
+      }
+      cur_edge->to = n;
+      cur_edge->next = rev_adj_list[cur_number];
+      rev_adj_list[cur_number] = cur_edge;
+    }
+    if (cur_number == -1)
+      break;
+    n++;
+  }
+  int i, j;
+  int num_unavoidable = 0, num_split = 0;
+  int unavoidable[MAX_N], split[MAX_N];
+  int cur_parent, cur_min;
+  for (i = 1; i < n - 1; i++) {
+    for (j = 0; j < n; j++) {
+      distances[j][0] = -1;
+      distances[j][1] = 0;
+    }
+    distances[i][1] = 2;
+    distances[0][0] = 0;
+    cur_parent = 0;
+    for (;;) {
+      distances[cur_parent][1] = 1;
+      cur_edge = adj_list[cur_parent];
+      while (cur_edge != NULL) {
+        if (distances[cur_edge->to][1] == 0 &&
+            (distances[cur_edge->to][0] > 
+            distances[cur_parent][0] + 1 || 
+            distances[cur_edge->to][0] == -1))
+          distances[cur_edge->to][0] = distances[cur_parent][0] + 1;
+        cur_edge = cur_edge->next;
+      }
+      cur_min = -1;
+      for (j = 0; j < n; j++)
+        if ((cur_min > distances[j][0] || cur_min == -1) && 
+            distances[j][1] == 0 && distances[j][0] != -1) {
+          cur_min = distances[j][0];
+          cur_parent = j;
+        }
+      if (cur_parent == n - 1 || cur_min == -1)
+        break;
+    }
+    if (cur_parent == n - 1)
+      continue;
+    unavoidable[num_unavoidable++] = i;
+    for (j = 0; j < n; j++) {
+      distances[j][0] = -1;
+      distances[j][1] = 0;
+    }
+    distances[i][1] = 2;
+    distances[0][0] = 0;
+    cur_parent = 0;
+    for (;;) {
+      distances[cur_parent][1] = 1;
+      cur_edge = rev_adj_list[cur_parent];
+      while (cur_edge != NULL) {
+        if (distances[cur_edge->to][1] == 0 &&
+            (distances[cur_edge->to][0] > 
+            distances[cur_parent][0] + 1 || 
+            distances[cur_edge->to][0] == -1))
+          distances[cur_edge->to][0] = distances[cur_parent][0] + 1;
+        cur_edge = cur_edge->next;
+      }
+      cur_min = -1;
+      for (j = 0; j < n; j++)
+        if ((cur_min > distances[j][0] || cur_min == -1) && 
+            distances[j][1] == 0 && distances[j][0] != -1) {
+          cur_min = distances[j][0];
+          cur_parent = j;
+        }
+      if (cur_parent == n - 1 || cur_min == -1)
+        break;
+    }
+    if (cur_min == -1) {
+      cur_edge = adj_list[i];
+      while (cur_edge != NULL) {
+        if (distances[cur_edge->to][0] != -1)
+          break;
+        cur_edge = cur_edge->next;
+      }
+      if (cur_edge == NULL)
+        split[num_split++] = i;
+    }
+  }
+  fprintf(fout, "%d", num_unavoidable);
+  for (i = 0; i < num_unavoidable; i++)
+    fprintf(fout, " %d", unavoidable[i]);
+  fprintf(fout, "\n%d", num_split);
+  for (i = 0; i < num_split; i++)
+    fprintf(fout, " %d", split[i]);
+  fprintf(fout, "\n");
+  return 0;
+}

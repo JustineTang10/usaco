@@ -1,0 +1,72 @@
+/*
+ID: jujumoh1
+LANG: C
+TASK: milk
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct farmer {
+  int cost;
+  int amount;
+} farmer;
+
+int compare(const void *a, const void *b) {
+  return (*(int*)a - *(int*)b);
+}
+
+farmer *find_farmer(farmer *farmers[], int num_farmers, int cost) {
+  farmer *found_farmers[num_farmers];
+  int count = 0, i;
+  for (i = 0; i < num_farmers; i++)
+    if (farmers[i]->cost == cost) {
+      found_farmers[count] = farmers[i];
+      count++;
+    }
+  for (i = 0; i < count; i++)
+    if (found_farmers[i]->amount > 0)
+      return found_farmers[i];
+  if (sizeof(found_farmers) == sizeof(farmer))
+    return found_farmers[0];
+  return NULL;
+}
+
+int main(void) {
+  FILE *fin = fopen("milk.in", "r");
+  FILE *fout = fopen("milk.out", "w");
+  int n, m, i, money = 0, amount_bought = 0;
+  fscanf(fin, "%d%d", &n, &m);
+  int costs[m];
+  farmer *farmers[m];
+  farmer *current_farmer;
+  for (i = 0; i < m; i++) {
+    farmer *f = malloc(sizeof(farmer));
+    if (f == NULL) {
+      fprintf(stderr, "malloc error\n");
+      exit(1);
+    }
+    fscanf(fin, "%d%d", &f->cost, &f->amount);
+    costs[i] = f->cost;
+    farmers[i] = f;
+  }
+  qsort(costs, m, sizeof(int), compare);
+  for (i = 0; i < m; i++) {
+    current_farmer = find_farmer(farmers, m, costs[i]);
+    if (current_farmer->amount < n - amount_bought) {
+      amount_bought += current_farmer->amount;
+      money += current_farmer->cost * current_farmer->amount;
+      current_farmer->amount = 0;
+    }
+    else {
+      money += current_farmer->cost * (n - amount_bought);
+      amount_bought += n - amount_bought;
+      current_farmer->amount = current_farmer->amount - 
+                                (n - amount_bought);
+      break;
+    }
+  }
+  fprintf(fout, "%d\n", money);
+  return 0;
+}
